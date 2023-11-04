@@ -9,12 +9,13 @@
 version: v1
 
 # name is the module name.
-#name: buf.build/acme/weather
+name: buf.build/DimKush/grpc-example
 
 # deps are the module dependencies
-# deps:
-#   - buf.build/googleapis/googleapis
-#   - buf.build/envoyproxy/protoc-gen-validate
+#deps:
+#  - buf.build/acme/petapis
+#  - buf.build/acme/pkg:alpha
+#  - buf.build/acme/paymentapis:7e8b594e68324329a7aefc6e750d18b9
 
 # build contains the options for builds.
 #
@@ -25,17 +26,17 @@ version: v1
 # omitted.
 build:
 
-# excludes is the list of directories to exclude.
-#
-# These directories will not be built or checked. If a directory is excluded,
-# buf treats the directory as if it does not exist.
-#
-# All directory paths in exclude must be relative to the directory of
-# your buf.yaml. Only directories can be specified, and all specified
-# directories must within the root directory.
-#excludes:
-#  - foo
-#  - bar/baz
+  # excludes is the list of directories to exclude.
+  #
+  # These directories will not be built or checked. If a directory is excluded,
+  # buf treats the directory as if it does not exist.
+  #
+  # All directory paths in exclude must be relative to the directory of
+  # your buf.yaml. Only directories can be specified, and all specified
+  # directories must within the root directory.
+  #excludes:
+  #  - foo
+  #  - bar/baz
 
 # lint contains the options for lint rules.
 lint:
@@ -64,9 +65,9 @@ lint:
   # All directories and file paths are specified relative to the root directory.
   # The directory "." is not allowed - this is equivalent to ignoring
   # everything.
-  ignore:
-    - validate
-    - google
+  #ignore:
+  #  - bat
+  #  - ban/ban.proto
 
   # ignore_only is the map from rule id or category to file or directory to
   # ignore.
@@ -142,7 +143,11 @@ lint:
 
 # breaking contains the options for breaking rules.
 breaking:
-
+  use:
+    - FILE
+  ignore:
+      - ./google/api/annotations.proto
+      - ./google/api/http.proto
   # use is the list of rule categories and ids to use for
   # buf breaking.
   #
@@ -161,8 +166,6 @@ breaking:
   # - [WIRE_JSON]
   #
   # The default is [FILE], as done below.
-  use:
-    - FILE
 
   # except is the list of rule ids or categories to remove from the use
   # list.
