@@ -1,0 +1,17 @@
+syntax="proto3";
+
+package DimKush.grpc_example.v1;
+
+//import "validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/DimKush/grpc-example/pkg/grpc_example;grpc_example";
+
+service GrpcExampleServiceV1 {
+  rpc Alive(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get: "/v1/alive"
+    };
+  }
+}
