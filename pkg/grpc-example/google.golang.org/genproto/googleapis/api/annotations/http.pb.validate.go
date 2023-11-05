@@ -11,6 +11,7 @@ import (
 	"net/mail"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -31,19 +32,53 @@ var (
 	_ = (*url.URL)(nil)
 	_ = (*mail.Address)(nil)
 	_ = anypb.Any{}
+	_ = sort.Sort
 )
 
 // Validate checks the field values on Http with the rules defined in the proto
-// definition for this message. If any rules are violated, an error is returned.
+// definition for this message. If any rules are violated, the first error
+// encountered is returned, or nil if there are no violations.
 func (m *Http) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Http with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in HttpMultiError, or nil if none found.
+func (m *Http) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Http) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
 
+	var errors []error
+
 	for idx, item := range m.GetRules() {
 		_, _ = idx, item
 
-		if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, HttpValidationError{
+						field:  fmt.Sprintf("Rules[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, HttpValidationError{
+						field:  fmt.Sprintf("Rules[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return HttpValidationError{
 					field:  fmt.Sprintf("Rules[%v]", idx),
@@ -57,8 +92,28 @@ func (m *Http) Validate() error {
 
 	// no validation rules for FullyDecodeReservedExpansion
 
+	if len(errors) > 0 {
+		return HttpMultiError(errors)
+	}
+
 	return nil
 }
+
+// HttpMultiError is an error wrapping multiple validation errors returned by
+// Http.ValidateAll() if the designated constraints aren't met.
+type HttpMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m HttpMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m HttpMultiError) AllErrors() []error { return m }
 
 // HttpValidationError is the validation error returned by Http.Validate if the
 // designated constraints aren't met.
@@ -115,11 +170,26 @@ var _ interface {
 } = HttpValidationError{}
 
 // Validate checks the field values on HttpRule with the rules defined in the
-// proto definition for this message. If any rules are violated, an error is returned.
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
 func (m *HttpRule) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on HttpRule with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in HttpRuleMultiError, or nil
+// if none found.
+func (m *HttpRule) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *HttpRule) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
+
+	var errors []error
 
 	// no validation rules for Selector
 
@@ -130,7 +200,26 @@ func (m *HttpRule) Validate() error {
 	for idx, item := range m.GetAdditionalBindings() {
 		_, _ = idx, item
 
-		if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, HttpRuleValidationError{
+						field:  fmt.Sprintf("AdditionalBindings[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, HttpRuleValidationError{
+						field:  fmt.Sprintf("AdditionalBindings[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return HttpRuleValidationError{
 					field:  fmt.Sprintf("AdditionalBindings[%v]", idx),
@@ -142,26 +231,99 @@ func (m *HttpRule) Validate() error {
 
 	}
 
-	switch m.Pattern.(type) {
-
+	switch v := m.Pattern.(type) {
 	case *HttpRule_Get:
+		if v == nil {
+			err := HttpRuleValidationError{
+				field:  "Pattern",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for Get
-
 	case *HttpRule_Put:
+		if v == nil {
+			err := HttpRuleValidationError{
+				field:  "Pattern",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for Put
-
 	case *HttpRule_Post:
+		if v == nil {
+			err := HttpRuleValidationError{
+				field:  "Pattern",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for Post
-
 	case *HttpRule_Delete:
+		if v == nil {
+			err := HttpRuleValidationError{
+				field:  "Pattern",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for Delete
-
 	case *HttpRule_Patch:
+		if v == nil {
+			err := HttpRuleValidationError{
+				field:  "Pattern",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 		// no validation rules for Patch
-
 	case *HttpRule_Custom:
+		if v == nil {
+			err := HttpRuleValidationError{
+				field:  "Pattern",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
 
-		if v, ok := interface{}(m.GetCustom()).(interface{ Validate() error }); ok {
+		if all {
+			switch v := interface{}(m.GetCustom()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, HttpRuleValidationError{
+						field:  "Custom",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, HttpRuleValidationError{
+						field:  "Custom",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCustom()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return HttpRuleValidationError{
 					field:  "Custom",
@@ -171,10 +333,32 @@ func (m *HttpRule) Validate() error {
 			}
 		}
 
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return HttpRuleMultiError(errors)
 	}
 
 	return nil
 }
+
+// HttpRuleMultiError is an error wrapping multiple validation errors returned
+// by HttpRule.ValidateAll() if the designated constraints aren't met.
+type HttpRuleMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m HttpRuleMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m HttpRuleMultiError) AllErrors() []error { return m }
 
 // HttpRuleValidationError is the validation error returned by
 // HttpRule.Validate if the designated constraints aren't met.
@@ -231,19 +415,54 @@ var _ interface {
 } = HttpRuleValidationError{}
 
 // Validate checks the field values on CustomHttpPattern with the rules defined
-// in the proto definition for this message. If any rules are violated, an
-// error is returned.
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
 func (m *CustomHttpPattern) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CustomHttpPattern with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CustomHttpPatternMultiError, or nil if none found.
+func (m *CustomHttpPattern) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CustomHttpPattern) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
+
+	var errors []error
 
 	// no validation rules for Kind
 
 	// no validation rules for Path
 
+	if len(errors) > 0 {
+		return CustomHttpPatternMultiError(errors)
+	}
+
 	return nil
 }
+
+// CustomHttpPatternMultiError is an error wrapping multiple validation errors
+// returned by CustomHttpPattern.ValidateAll() if the designated constraints
+// aren't met.
+type CustomHttpPatternMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CustomHttpPatternMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CustomHttpPatternMultiError) AllErrors() []error { return m }
 
 // CustomHttpPatternValidationError is the validation error returned by
 // CustomHttpPattern.Validate if the designated constraints aren't met.
